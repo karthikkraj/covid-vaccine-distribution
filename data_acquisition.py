@@ -22,30 +22,40 @@ INDEX_URL = f"{BASE_URL}index.csv"
 def load_covid_data():
     print("Loading COVID-19 data...")
     
-    # Download index file to get location information
-    index_df = pd.read_csv(INDEX_URL)
+    # Configure SSL context to handle certificate verification
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
     
-    # Download vaccination data
-    vaccines_df = pd.read_csv(VACCINES_URL)
+    try:
+        # Download index file to get location information
+        index_df = pd.read_csv(INDEX_URL)
+        
+        # Download vaccination data
+        vaccines_df = pd.read_csv(VACCINES_URL)
+        
+        # Download demographic data for population density
+        demographics_df = pd.read_csv(DEMOGRAPHICS_URL)
+        
+        # Download mobility data for transportation network proxy
+        mobility_df = pd.read_csv(MOBILITY_URL)
+        
+        # Download government response data
+        gov_response_df = pd.read_csv(GOVERNMENT_RESPONSE_URL)
+        
+        print("Data loaded successfully!")
+        
+        return {
+            'index': index_df,
+            'vaccines': vaccines_df,
+            'demographics': demographics_df,
+            'mobility': mobility_df,
+            'gov_response': gov_response_df
+        }
+        
+    except Exception as e:
+        print(f"Error loading data: {str(e)}")
+        raise
     
-    # Download demographic data for population density
-    demographics_df = pd.read_csv(DEMOGRAPHICS_URL)
-    
-    # Download mobility data for transportation network proxy
-    mobility_df = pd.read_csv(MOBILITY_URL)
-    
-    # Download government response data
-    gov_response_df = pd.read_csv(GOVERNMENT_RESPONSE_URL)
-    
-    print("Data loaded successfully!")
-    
-    return {
-        'index': index_df,
-        'vaccines': vaccines_df,
-        'demographics': demographics_df,
-        'mobility': mobility_df,
-        'gov_response': gov_response_df
-    }
 
 # Process the data for network analysis
 def prepare_data_for_network_analysis(data_dict):
@@ -56,38 +66,59 @@ def prepare_data_for_network_analysis(data_dict):
     vaccines_df = data_dict['vaccines']
     demographics_df = data_dict['demographics']
     
-    # Focus on country-level data for initial analysis
-    country_index = index_df[index_df['aggregation_level'] == 0]
+    # Focus on specific countries of interest (30 countries total)
+    target_countries = ['US', 'AU', 'IN', 'BR', 'GB', 'FR', 'DE', 'IT', 'ES', 'CA', 
+                       'MX', 'JP', 'KR', 'CN', 'ZA', 'NG', 'EG', 'PK', 'RU', 'ID', 
+                       'TR', 'VN', 'IR', 'TH', 'PH', 'AR', 'CO', 'ET', 'KE']
+    print(f"Total countries in index: {len(index_df)}")
+    print(f"Countries with aggregation_level 0: {len(index_df[index_df['aggregation_level'] == 0])}")
+    
+    country_index = index_df[(index_df['aggregation_level'] == 0) & 
+                           (index_df['country_code'].isin(target_countries))]
+    print(f"Filtered countries: {country_index['country_code'].tolist()}")
     
     # Merge vaccination data with country information
+    print(f"\nVaccine data shape before merge: {vaccines_df.shape}")
+    print(f"Country index shape: {country_index.shape}")
+    
     vax_with_location = pd.merge(
         vaccines_df,
-        country_index[['key', 'country_name', 'country_code']],
-        on='key',
+        country_index[['location_key', 'country_name', 'country_code']],
+        on='location_key',
         how='inner'
     )
+    print(f"After merge shape: {vax_with_location.shape}")
+    print(f"Unique countries after merge: {vax_with_location['country_code'].nunique()}")
     
-    # Get the latest vaccination data for each country
-    latest_date = vax_with_location['date'].max()
-    latest_vax_data = vax_with_location[vax_with_location['date'] == latest_date]
+    # Get most recent vaccination data for each country (may be different dates)
+    vax_with_location['date'] = pd.to_datetime(vax_with_location['date'])
+    latest_vax_data = vax_with_location.loc[vax_with_location.groupby('country_code')['date'].idxmax()]
+    print(f"\nCountries with available data: {latest_vax_data['country_code'].unique()}")
     
     # Merge with demographic data to get population information
-    demographics_country = demographics_df[demographics_df['key'].isin(country_index['key'])]
+    demographics_country = demographics_df[demographics_df['location_key'].isin(country_index['location_key'])]
     
     vax_demo_data = pd.merge(
         latest_vax_data,
-        demographics_country[['key', 'population', 'population_density']],
-        on='key',
+        demographics_country[['location_key', 'population', 'population_density']],
+        on='location_key',
         how='left'
     )
     
-    # Calculate vaccination coverage and create network nodes data
-    vax_demo_data['total_vaccinations_per_hundred'] = vax_demo_data['total_vaccinations'] / vax_demo_data['population'] * 100
-    vax_demo_data['people_vaccinated_per_hundred'] = vax_demo_data['people_vaccinated'] / vax_demo_data['population'] * 100
-    vax_demo_data['people_fully_vaccinated_per_hundred'] = vax_demo_data['people_fully_vaccinated'] / vax_demo_data['population'] * 100
+    # Calculate vaccination coverage using current column names
+    if 'cumulative_persons_vaccinated' in vax_demo_data.columns:
+        vax_demo_data['people_vaccinated_per_hundred'] = vax_demo_data['cumulative_persons_vaccinated'] / vax_demo_data['population'] * 100
+    if 'cumulative_persons_fully_vaccinated' in vax_demo_data.columns:
+        vax_demo_data['people_fully_vaccinated_per_hundred'] = vax_demo_data['cumulative_persons_fully_vaccinated'] / vax_demo_data['population'] * 100
+    if 'cumulative_vaccine_doses_administered' in vax_demo_data.columns:
+        vax_demo_data['total_vaccinations_per_hundred'] = vax_demo_data['cumulative_vaccine_doses_administered'] / vax_demo_data['population'] * 100
+    
+    # Check if we have any vaccination data
+    if not any(col.endswith('_per_hundred') for col in vax_demo_data.columns):
+        raise ValueError("No valid vaccination data columns found in the dataset")
     
     # Clean up data - remove rows with missing crucial data
-    network_nodes = vax_demo_data.dropna(subset=['population', 'people_vaccinated'])
+    network_nodes = vax_demo_data.dropna(subset=['population', 'people_vaccinated_per_hundred'])
     
     print(f"Data prepared. We have vaccination data for {len(network_nodes)} countries.")
     
@@ -100,3 +131,5 @@ if __name__ == "__main__":
     
     print("\nSample of the prepared data:")
     print(network_nodes[['country_name', 'population', 'people_vaccinated_per_hundred']].head())
+
+    

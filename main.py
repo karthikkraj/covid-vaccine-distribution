@@ -11,24 +11,18 @@ import json
 import os
 from datetime import datetime
 
-# Import functions from other modules
-# In a real project, these would be proper imports from separate files
-from data_acquisition import load_covid_data, prepare_data_for_network_analysis
-from network_construction import create_vaccine_distribution_network, analyze_network, visualize_network
-from optimization_model import optimize_vaccine_distribution, analyze_optimization_results, visualize_optimization_results
-
-def create_and_analyze_network(network_nodes, mobility_data):
+def create_and_analyze_network(network_nodes, mobility_data, output_dir):
     """Helper function to create and analyze network"""
     G = create_vaccine_distribution_network(network_nodes, mobility_data)
     analysis_results = analyze_network(G)
-    visualize_network(G, analysis_results, args.output_dir)
+    visualize_network(G, analysis_results, output_dir)
     return G, analysis_results
 
-def run_optimization_analysis(G, network_analysis):
+def run_optimization_analysis(G, network_analysis, vaccines, output_dir):
     """Helper function to run optimization analysis"""
-    optimization_results = optimize_vaccine_distribution(G, args.vaccines)
+    optimization_results = optimize_vaccine_distribution(G, vaccines)
     opt_analysis = analyze_optimization_results(G, optimization_results)
-    visualize_optimization_results(opt_analysis, args.output_dir)
+    visualize_optimization_results(opt_analysis, output_dir)
     return optimization_results, opt_analysis
 
 def main():
@@ -70,7 +64,7 @@ def main():
             print("\n" + "="*80)
             print("STEP 2: NETWORK CONSTRUCTION AND ANALYSIS")
             print("="*80)
-            G, analysis_results = create_and_analyze_network(network_nodes, covid_data['mobility'])
+            G, analysis_results = create_and_analyze_network(network_nodes, covid_data['mobility'], args.output_dir)
             
             # Save network analysis results
             with open(f"{args.output_dir}/network_analysis_results.json", 'w') as f:
@@ -95,21 +89,18 @@ def main():
             print("\n" + "="*80)
             print(f"STEP 3: OPTIMIZATION OF VACCINE DISTRIBUTION (Available vaccines: {args.vaccines:,.0f})")
             print("="*80)
-            optimization_results, opt_analysis = run_optimization_analysis(G, analysis_results)
+            optimization_results, opt_analysis = run_optimization_analysis(G, analysis_results, args.vaccines, args.output_dir)
             
             # Save optimization results
             with open(f"{args.output_dir}/optimization_results.json", 'w') as f:
                 # Convert to serializable format
                 serializable_results = {
                     'status': optimization_results['status'],
-                    'objective_value': float(optimization_results['objective_value']),
                     'total_allocated': float(optimization_results['total_allocated']),
-                    'improvement_by_country': {k: float(v) for k, v in optimization_results['improvement_by_country'].items()},
+                    'allocation': {k: float(v) for k, v in optimization_results['allocation'].items()},
                     'equity_metrics': {
                         'before_gini': float(opt_analysis['before_gini']),
-                        'after_gini': float(opt_analysis['after_gini']),
-                        'improvement_pct': float((opt_analysis['before_gini'] - opt_analysis['after_gini']) / 
-                                              opt_analysis['before_gini'] * 100)
+                        'after_gini': float(opt_analysis['after_gini'])
                     }
                 }
                 json.dump(serializable_results, f, indent=2)
