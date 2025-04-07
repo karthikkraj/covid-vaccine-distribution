@@ -1,20 +1,33 @@
-# COVID-19 Vaccine Distribution Optimization
+# Global Vaccine Allocation Optimizer
 
-A network-based optimization tool for analyzing and improving global vaccine distribution equity during pandemics.
+An advanced optimization system for equitable distribution of limited vaccine supplies across countries, using:
+- Network flow analysis
+- Linear programming optimization
+- Equity-focused allocation algorithms
 
-## Overview:
+## Overview
 
 This project creates a computational model to optimize global vaccine distribution using network theory and linear programming. The system analyzes country-level vaccination data, population demographics, manufacturing capabilities, and transportation networks to identify bottlenecks and determine the most equitable allocation of limited vaccine supplies.
 
-## Features:
+## Key Features
 
-- **Data Acquisition**: Downloads and processes COVID-19 data from Google's COVID-19 Open Data repository
-- **Network Construction**: Models vaccine distribution as a directed network with countries as nodes
-- **Network Analysis**: Identifies key distribution hubs, bottlenecks, and flow capacity issues
-- **Optimization Model**: Uses linear programming to maximize vaccination equity across countries
-- **Visualization**: Generates network diagrams and comparative charts of optimization results
+- **Intelligent Data Processing**: 
+  - Handles partial/incomplete country data
+  - Uses most recent available data per country
+  - Normalizes population metrics
 
-## Project Structure:
+- **Advanced Optimization**:
+  - Multi-objective optimization (equity vs coverage)
+  - Configurable vaccine supply constraints
+  - Gini coefficient tracking
+  - Per-country allocation limits
+
+- **Analysis Tools**:
+  - Pre/post optimization comparisons
+  - Bottleneck identification
+  - Scenario modeling (what-if analysis)
+
+## Project Structure
 
 ```
 covid-vaccine-distribution/
@@ -32,7 +45,7 @@ covid-vaccine-distribution/
 └── README.md                # Project documentation
 ```
 
-## Requirements:
+## Requirements
 
 - Python 3.8+
 - pandas
@@ -42,7 +55,7 @@ covid-vaccine-distribution/
 - seaborn
 - pulp (for optimization)
 
-## Installation:
+## Installation
 
 1. Clone the repository:
    ```bash
@@ -61,9 +74,9 @@ covid-vaccine-distribution/
    pip install -r requirements.txt
    ```
 
-## Usage:
+## Usage
 
-### Basic Usage:
+### Basic Usage
 
 Run the full analysis pipeline:
 
@@ -71,7 +84,7 @@ Run the full analysis pipeline:
 python main.py --run-all --vaccines 1000000000 --output-dir results
 ```
 
-### Component-specific Usage:
+### Component-specific Usage
 
 Run individual components:
 
@@ -86,7 +99,7 @@ python main.py --network-only
 python main.py --optimize-only --vaccines 5e8
 ```
 
-### Example Workflow:
+### Example Workflow
 
 1. Prepare the data:
    ```bash
@@ -110,7 +123,7 @@ python main.py --optimize-only --vaccines 5e8
    ls -la results/
    ```
 
-## Command-line Arguments:
+## Command-line Arguments
 
 - `--run-all`: Run all analysis steps
 - `--data-only`: Only load and prepare data
@@ -119,7 +132,7 @@ python main.py --optimize-only --vaccines 5e8
 - `--vaccines`: Number of available vaccines to distribute (default: 1 billion)
 - `--output-dir`: Directory to save output files (default: 'results')
 
-## Output:
+## Output
 
 The program generates several output files in the specified directory:
 
@@ -129,16 +142,33 @@ The program generates several output files in the specified directory:
 - `vaccine_distribution_network.png`: Visualization of the distribution network
 - `vaccination_rate_comparison.png`: Before/after comparison of vaccination rates
 
-## Example Analysis Results:
+## Example Optimization Results
 
-The optimization model identifies countries where vaccine distribution would have the greatest impact on global equity. The analysis includes:
+Recent allocation with 4 billion vaccines (416M allocated):
 
-- Vaccination rate improvements by country
-- Equity impact (reduction in Gini coefficient)
-- Remaining bottlenecks after optimization
-- Logistics metrics for distribution
+```json
+{
+  "total_allocated": 416039169.7,
+  "allocation": {
+    "IN": 138000438.5,
+    "US": 33100264.7,
+    "ID": 27352362.1,
+    "NG": 20613958.7,
+    ...
+  },
+  "equity_metrics": {
+    "before_gini": 0.165,
+    "after_gini": 0.146 
+  }
+}
+```
 
-## Development:
+Key metrics:
+- 12% improvement in equity (Gini coefficient)
+- Population-proportional allocations
+- Prioritization of low-coverage countries
+
+## Development
 
 To extend this project:
 - Add new data sources in `data_acquisition.py`
@@ -149,7 +179,6 @@ To extend this project:
 ## License
 
 MIT
-
 
 ##  Authors:
 **[Karthik Raj (2022BCD0041)](https://github.com/karthikkraj)** 
