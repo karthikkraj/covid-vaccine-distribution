@@ -1,4 +1,4 @@
-# Covid Vaccine Distribution Optimization using Network Science Analysis
+# Covid-19 Vaccine Distribution Optimization using Network Science Analysis
 
 An advanced optimization system for equitable distribution of limited vaccine supplies across countries, using:
 - Network flow analysis
