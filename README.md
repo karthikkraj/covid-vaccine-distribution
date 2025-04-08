@@ -1,4 +1,4 @@
-# Vaccine Distribution Network Optimizer
+# Covid-19 Vaccine Distribution Network Optimizer
 
 A robust system for equitable vaccine allocation using network analysis and optimization
 
