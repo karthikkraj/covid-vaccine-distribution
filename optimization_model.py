@@ -5,16 +5,38 @@ import matplotlib.pyplot as plt
 
 def optimize_vaccine_distribution(G, available_vaccines):
     """Optimize vaccine distribution accounting for booster needs"""
-    nodes = list(G.nodes())
+    # Validate nodes have required attributes
+    nodes = []
+    for node in G.nodes():
+        if G.nodes[node].get('type') == 'manufacturer':
+            continue  # Skip manufacturers
+        if not all(k in G.nodes[node] for k in ['population', 'vaccination_rate']):
+            print(f"Warning: Node {node} missing required attributes")
+            continue
+        nodes.append(node)
     n = len(nodes)
     
-    # Calculate booster need scores (higher for countries with older vaccinations)
+    # Calculate need scores with robust attribute handling
     scores = []
     for node in nodes:
-        last_vax_date = pd.to_datetime(G.nodes[node]['last_vaccination_date'])
-        days_since_vax = (pd.Timestamp.now() - last_vax_date).days
-        coverage_gap = max(0, 1 - (G.nodes[node]['vaccination_rate'] / 100))
-        score = 0.7 * days_since_vax/180 + 0.3 * coverage_gap
+        try:
+            # Get vaccination rate with fallback to 0 if missing
+            vax_rate = G.nodes[node].get('vaccination_rate', 0)
+            coverage_gap = max(0, 1 - (vax_rate / 100))
+            
+            # Try to use vaccination date if available
+            try:
+                last_vax_date = pd.to_datetime(G.nodes[node].get('last_vaccination_date', ''))
+                if pd.isna(last_vax_date):
+                    raise ValueError
+                days_since_vax = (pd.Timestamp.now() - last_vax_date).days
+                score = 0.7 * days_since_vax/180 + 0.3 * coverage_gap
+            except:
+                score = coverage_gap  # Fallback to just coverage gap
+        except Exception as e:
+            print(f"Error processing node {node}: {str(e)}")
+            score = 0.5  # Default medium priority if all else fails
+            
         scores.append(score)
     
     # Normalize scores
@@ -29,8 +51,14 @@ def optimize_vaccine_distribution(G, available_vaccines):
     A_ub = np.ones((1, n))  # Total vaccines constraint
     b_ub = [available_vaccines]
     
-    # Bounds (minimum 0, maximum proportional to population)
-    bounds = [(0, G.nodes[node]['population'] * 0.1) for node in nodes]
+    # Bounds with fallback for missing population data
+    bounds = []
+    for node in nodes:
+        try:
+            pop = G.nodes[node].get('population', 1e7)  # Default to 10M if missing
+            bounds.append((0, pop * 0.1))
+        except:
+            bounds.append((0, 1e6))  # Fallback upper bound of 1M
     
     # Solve optimization problem
     result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
@@ -46,16 +74,27 @@ def optimize_vaccine_distribution(G, available_vaccines):
     }
 
 def analyze_optimization_results(G, results):
-    """Analyze the optimization results"""
-    before_rates = [G.nodes[node]['vaccination_rate'] for node in G.nodes()]
-    
+    """Analyze the optimization results with robust attribute handling"""
+    before_rates = []
     after_rates = []
+    
     for node in G.nodes():
-        new_vaccinations = results['allocation'][node]
-        population = G.nodes[node]['population']
-        current_rate = G.nodes[node]['vaccination_rate']
-        new_rate = current_rate + (new_vaccinations / population * 100)
-        after_rates.append(new_rate)
+        # Skip manufacturer nodes
+        if G.nodes[node].get('type') == 'manufacturer':
+            continue
+            
+        try:
+            # Get current vaccination rate with fallback to 0
+            current_rate = G.nodes[node].get('vaccination_rate', 0)
+            before_rates.append(current_rate)
+            
+            # Calculate new rate if allocation exists
+            new_vaccinations = results['allocation'].get(node, 0)
+            population = G.nodes[node].get('population', 1e7)  # Default 10M
+            new_rate = current_rate + (new_vaccinations / population * 100)
+            after_rates.append(new_rate)
+        except Exception as e:
+            print(f"Warning: Error analyzing node {node} - {str(e)}")
     
     return {
         'before_gini': calculate_gini(before_rates),

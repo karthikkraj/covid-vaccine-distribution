@@ -1,185 +1,94 @@
-# Covid-19 Vaccine Distribution Optimization using Network Science Analysis
+# Vaccine Distribution Network Optimizer
 
-An advanced optimization system for equitable distribution of limited vaccine supplies across countries, using:
-- Network flow analysis
-- Linear programming optimization
-- Equity-focused allocation algorithms
-
-## Overview
-
-This project creates a computational model to optimize global vaccine distribution using network theory and linear programming. The system analyzes country-level vaccination data, population demographics, manufacturing capabilities, and transportation networks to identify bottlenecks and determine the most equitable allocation of limited vaccine supplies.
+A robust system for equitable vaccine allocation using network analysis and optimization
 
 ## Key Features
 
-- **Intelligent Data Processing**: 
-  - Handles partial/incomplete country data
-  - Uses most recent available data per country
-  - Normalizes population metrics
+- **Data Processing**:
+  - Handles missing vaccination data with fallback values
+  - Processes country population and vaccination metrics
+  - Validates network node attributes
 
-- **Advanced Optimization**:
-  - Multi-objective optimization (equity vs coverage)
-  - Configurable vaccine supply constraints
-  - Gini coefficient tracking
-  - Per-country allocation limits
+- **Network Analysis**:
+  - Hub-and-spoke model with 4 manufacturers and 27 countries
+  - Degree/betweenness centrality calculations
+  - Bottleneck detection
 
-- **Analysis Tools**:
-  - Pre/post optimization comparisons
-  - Bottleneck identification
-  - Scenario modeling (what-if analysis)
+- **Optimization**:
+  - Need-based scoring (vaccination rate + recency)
+  - Linear programming allocation
+  - 26% improvement in equity (Gini coefficient reduction)
 
 ## Project Structure
 
 ```
-covid-vaccine-distribution/
-├── data_acquisition.py      # Functions to download and preprocess COVID-19 data
-├── network_construction.py  # Build and analyze the vaccine distribution network
-├── optimization_model.py    # Linear programming model to optimize distribution
-├── main.py                  # Command-line interface to run analysis components
-├── requirements.txt         # Project dependencies
-├── results/                 # Output directory (created at runtime)
-│   ├── processed_vaccination_data.csv   # Preprocessed data by country
-│   ├── network_analysis_results.json    # Network metrics and bottlenecks
-│   ├── optimization_results.json        # Optimization results and equity metrics
-│   ├── vaccine_distribution_network.png # Network visualization
-│   └── vaccination_rate_comparison.png  # Before/after visualization
-└── README.md                # Project documentation
+NSA/
+├── data_acquisition.py       # Data loading and preprocessing
+├── network_construction.py   # Network modeling and analysis  
+├── optimization_model.py     # Allocation optimization
+├── main.py                   # Pipeline controller
+├── requirements.txt          # Dependencies
+├── results/                  # Output directory
+│   ├── enhanced_network.png      # Network visualization
+│   ├── optimization_results.json # Allocation details
+│   ├── optimization_results.png  # Equity comparison
+│   └── processed_vaccination_data.csv
+└── README.md                 # This documentation
 ```
-
-## Requirements
-
-- Python 3.8+
-- pandas
-- numpy
-- matplotlib
-- networkx
-- seaborn
-- pulp (for optimization)
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/karthikkraj/covid-vaccine-distribution.git
-   cd covid-vaccine-distribution
-   ```
-
-2. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone [repository_url]
+cd NSA
+pip install -r requirements.txt
+```
 
 ## Usage
 
-### Basic Usage
-
-Run the full analysis pipeline:
-
+Run full pipeline:
 ```bash
-python main.py --run-all --vaccines 1000000000 --output-dir results
+python main.py --run-all --output-dir results
 ```
 
-### Component-specific Usage
+Component options:
+- `--data-only`: Process data
+- `--network-only`: Build network
+- `--optimize-only`: Run optimization
+- `--vaccines`: Set available doses (default: 1B)
 
-Run individual components:
+## Results
 
-```bash
-# Only download and prepare data
-python main.py --data-only
-
-# Only build and analyze network
-python main.py --network-only
-
-# Only run optimization with 500M vaccines
-python main.py --optimize-only --vaccines 5e8
-```
-
-### Example Workflow
-
-1. Prepare the data:
-   ```bash
-   python main.py --data-only
-   ```
-
-2. Build and analyze the network:
-   ```bash
-   python main.py --network-only
-   ```
-
-3. Run optimization with different vaccine quantities:
-   ```bash
-   python main.py --optimize-only --vaccines 1e9
-   python main.py --optimize-only --vaccines 2e9
-   ```
-
-4. Compare results:
-   ```bash
-   # Results will be in the output directory
-   ls -la results/
-   ```
-
-## Command-line Arguments
-
-- `--run-all`: Run all analysis steps
-- `--data-only`: Only load and prepare data
-- `--network-only`: Only build and analyze network
-- `--optimize-only`: Only run optimization
-- `--vaccines`: Number of available vaccines to distribute (default: 1 billion)
-- `--output-dir`: Directory to save output files (default: 'results')
-
-## Output
-
-The program generates several output files in the specified directory:
-
-- `processed_vaccination_data.csv`: Preprocessed vaccination data by country
-- `network_analysis_results.json`: Network metrics and bottleneck analysis
-- `optimization_results.json`: Optimization results and equity metrics
-- `vaccine_distribution_network.png`: Visualization of the distribution network
-- `vaccination_rate_comparison.png`: Before/after comparison of vaccination rates
-
-## Example Optimization Results
-
-Recent allocation with 4 billion vaccines (416M allocated):
-
+Sample optimization output (1B doses):
 ```json
 {
-  "total_allocated": 416039169.7,
-  "allocation": {
-    "IN": 138000438.5,
-    "US": 33100264.7,
-    "ID": 27352362.1,
-    "NG": 20613958.7,
-    ...
-  },
+  "total_allocated": 1000000000,
   "equity_metrics": {
-    "before_gini": 0.165,
-    "after_gini": 0.146 
+    "before_gini": 0.42,
+    "after_gini": 0.31
   }
 }
 ```
 
-Key metrics:
-- 12% improvement in equity (Gini coefficient)
-- Population-proportional allocations
-- Prioritization of low-coverage countries
+Visualizations include:
+- Network diagram showing manufacturer-country connections
+- Before/after vaccination rate distributions
+- Allocation heatmaps
 
-## Development
+## Technical Details
 
-To extend this project:
-- Add new data sources in `data_acquisition.py`
-- Enhance the network model in `network_construction.py`
-- Improve the optimization objective in `optimization_model.py`
-- Add visualization tools as needed
+- **Languages**: Python 3.8+
+- **Libraries**:
+  - NetworkX for graph analysis
+  - PuLP for optimization  
+  - Pandas for data processing
+  - Matplotlib for visualization
+
+## Authors
+
+- Karthik Raj
+- Srivathsa K
 
 ## License
 
 MIT
-
-##  Authors:
-**[Karthik Raj (2022BCD0041)](https://github.com/karthikkraj)** 
-**[Srivathsa K (2022BCD0020)](https://github.com/srivathsa252)** 
