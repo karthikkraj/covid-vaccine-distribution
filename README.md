@@ -86,8 +86,8 @@ Visualizations include:
 
 ## Authors
 
-- [Karthik Raj](https://github.com/karthikkraj/covid-vaccine-distribution)
-- [Srivathsa K]
+- [Karthik Raj(2022BCD0041)](https://github.com/karthikkraj)
+- [Srivathsa K(2022BCD0020)](https://github.com/srivathsa252)
 
 ## License
 
